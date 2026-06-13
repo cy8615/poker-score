@@ -1,0 +1,162 @@
+<!-- 房间页 -->
+<view class="container">
+  <view class="room-top">
+    <text class="top-btn top-btn-left" bindtap="leaveRoom">←</text>
+    <view class="room-top-info">
+      <view wx:if="{{isClosed}}" class="settle-time">结算时间：{{settleTime}}</view>
+      <view class="room-id-row">
+        <text class="room-id-text">{{room.icon||'🃏'}} {{room.id}}</text>
+        <text wx:if="{{isClosed}}" class="closed-tag">已结算</text>
+        <text wx:elif="{{isCreator}}" class="creator-tag">我是房主</text>
+        <text wx:else class="creator-tag">房主：{{creatorName}}</text>
+      </view>
+      <text class="duration">{{durationText}}</text>
+    </view>
+    <text class="top-btn top-btn-right" bindtap="doRefresh">↻</text>
+    <text wx:if="{{!isClosed}}" class="top-btn top-btn-right" bindtap="showMenu">⋯</text>
+  </view>
+
+  <!-- 积分排行 -->
+  <view class="scoreboard">
+    <view class="sb-top">
+      <text class="sb-title">积分排行</text>
+      <text class="sb-count">{{room.members?room.members.length:0}}人</text>
+    </view>
+    <view class="score-row{{item.id===myId?' is-me':''}}" wx:for="{{sorted}}" wx:key="id" data-id="{{item.id}}" bindtap="tapMember">
+      <text class="rank">{{index+1}}</text>
+      <view class="avatar" style="background:{{item.color}};">
+        <image wx:if="{{item.avatarUrl && !item.avatarFail}}" class="prof-avatar-img" src="{{item.avatarUrl}}" mode="aspectFill" binderror="onAvatarError" data-id="{{item.id}}" />
+        <text wx:else>{{item.initial}}</text>
+      </view>
+      <view class="member-info">
+        <text class="member-name">{{item.name}}<text wx:if="{{item.id===myId}}" class="me-tag">我</text></text>
+        <text wx:if="{{item.id!==myId && !isClosed}}" class="transfer-hint">点击转账</text>
+      </view>
+      <text class="score-val" style="{{item.score>0?'color:var(--win);':item.score<0?'color:var(--lose);':''}}">{{item.showScore}}</text>
+      <text wx:if="{{item.score===0 && item.id!==myId && !isClosed}}" class="kick-btn" data-id="{{item.id}}" catchtap="onKickTap">✕</text>
+    </view>
+  </view>
+
+  <!-- 转账记录 -->
+  <view class="section-label">转账记录</view>
+  <view wx:if="{{txGroups.length===0}}" class="empty-text">暂无记录</view>
+  <block wx:for="{{txGroups}}" wx:key="time">
+    <view class="tx-group">
+      <view class="tx-group-time">{{item.timeLabel}}</view>
+      <view class="tl-item" wx:for="{{item.items}}" wx:for-item="tx" wx:key="id">
+        <view class="tl-dot"></view>
+        <text class="tl-desc">{{tx.fromName}}<text wx:if="{{tx.fromId===myId}}" class="me-tag">我</text> → {{tx.toName}}<text wx:if="{{tx.toId===myId}}" class="me-tag">我</text></text>
+        <text class="tl-amt">{{tx.amount}}</text>
+      </view>
+    </view>
+  </block>
+</view>
+
+<!-- 转账弹窗 -->
+<view class="modal-mask" wx:if="{{showPay}}" bindtap="closePay">
+  <view class="modal-box modal-pay" catchtap="noop">
+    <text class="modal-title">转账</text>
+    <text class="modal-sub">{{myName}} → {{payTarget}}</text>
+    <input class="input input-pay" type="digit" value="{{amount}}" bindinput="onAmount" placeholder="金额" />
+    <view class="amt-grid">
+      <text class="amt-pill" wx:for="{{[1,2,3,4,5,6,7,8,9,10]}}" wx:key="*this" bindtap="setAmount" data-amt="{{item}}">{{item}}</text>
+    </view>
+    <button class="btn btn-primary btn-block" bindtap="doTransfer">确认转账</button>
+  </view>
+</view>
+
+<!-- 菜单弹窗 -->
+<view class="modal-mask" wx:if="{{showMenuModal}}" bindtap="closeMenu">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">房间设置</text>
+    <view class="menu-share-box">
+      <text class="menu-share-hint">分享房间号给牌友</text>
+      <text class="menu-share-id">{{room.id}}</text>
+      <view class="menu-share-btns">
+        <button class="btn btn-primary btn-sm" bindtap="copyRoomId">复制房号</button>
+        <button class="btn btn-secondary btn-sm" bindtap="copyRoomLink">复制分享链接</button>
+      </view>
+    </view>
+    <view class="menu-divider"></view>
+    <button class="btn btn-block menu-btn" bindtap="showChangeName">修改昵称</button>
+    <button wx:if="{{isCreator}}" class="btn btn-block menu-btn" bindtap="doReset">重置积分</button>
+    <button wx:if="{{isCreator}}" class="btn btn-block menu-btn" bindtap="doSettle">积分结算</button>
+    <button wx:if="{{isCreator}}" class="btn btn-block menu-btn menu-btn-danger" bindtap="doDelete">删除房间</button>
+  </view>
+</view>
+
+<!-- 修改昵称弹窗 -->
+<view class="modal-mask" wx:if="{{showChangeNameModal}}" bindtap="closeChangeName">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">修改昵称</text>
+    <text class="modal-sub">当前：{{myName}}</text>
+    <view class="input-row">
+      <input class="input input-flex" value="{{changeNameValue}}" maxlength="8" bindinput="onChangeNameInput" />
+      <text class="rnd-btn" bindtap="randomChangeName">↻</text>
+    </view>
+    <view class="auth-row" style="margin:16rpx 0 0">
+      <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onRoomChooseAvatar">
+        <image wx:if="{{changeAvatarUrl}}" class="prof-avatar" src="{{changeAvatarUrl}}" mode="aspectFill" />
+        <text wx:else class="prof-avatar-placeholder">+</text>
+      </button>
+      <text class="auth-hint">修改头像（可选）</text>
+    </view>
+    <button class="btn btn-primary btn-block" style="margin-top:20rpx" bindtap="doChangeName">保存</button>
+  </view>
+</view>
+
+<!-- 踢人确认弹窗 -->
+<view class="modal-mask" wx:if="{{showKickConfirm}}" bindtap="closeKickConfirm">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">踢出成员</text>
+    <text class="modal-sub">确定将「{{kickTargetName}}」踢出房间吗？</text>
+    <view style="display:flex;gap:20rpx;margin-top:20rpx">
+      <button class="btn btn-secondary btn-sm" style="flex:1" bindtap="closeKickConfirm">取消</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" bindtap="doKick">确定踢出</button>
+    </view>
+  </view>
+</view>
+
+<!-- 聊天气泡按钮 -->
+<view class="chat-fab" wx:if="{{!isClosed}}" bindtap="toggleChat">
+  <text class="chat-fab-icon">💬</text>
+  <view wx:if="{{unreadCount>0}}" class="chat-badge">{{unreadCount>99?'99+':unreadCount}}</view>
+</view>
+
+<!-- 聊天面板 -->
+<view class="chat-overlay" wx:if="{{showChat}}" catchtap="toggleChat">
+  <view class="chat-panel" catchtap="noop">
+    <view class="chat-header">
+      <text class="chat-title">房间聊天</text>
+      <text class="chat-close" bindtap="toggleChat">✕</text>
+    </view>
+    <scroll-view class="chat-msgs" scroll-y scroll-into-view="{{messages.length>0?'msg-'+messages[messages.length-1].id:''}}" enhanced show-scrollbar="{{false}}">
+      <block wx:for="{{messages}}" wx:key="id">
+        <view wx:if="{{item.showTime}}" class="chat-time-sep">
+          <text class="chat-time-txt">{{item.timeLabel}}</text>
+        </view>
+        <view id="msg-{{item.id}}" class="chat-msg {{item.isMe?'chat-msg-me':''}}">
+          <view wx:if="{{!item.isMe}}" class="chat-avatar" style="background:{{item.color}}">
+            <image wx:if="{{item.avatarUrl}}" class="chat-avatar-img" src="{{item.avatarUrl}}" mode="aspectFill"></image>
+            <text>{{item.initial}}</text>
+          </view>
+          <view class="chat-bubble-wrap">
+            <text wx:if="{{!item.isMe}}" class="chat-sender">{{item.name}}</text>
+            <view class="chat-bubble-row">
+              <view class="chat-bubble-tail chat-bubble-tail-left" wx:if="{{!item.isMe}}"></view>
+              <view class="chat-bubble {{item.isMe?'chat-bubble-me':'chat-bubble-other'}}">
+                <text>{{item.text}}</text>
+              </view>
+              <view class="chat-bubble-tail chat-bubble-tail-right" wx:if="{{item.isMe}}"></view>
+              <text wx:if="{{item.isMe}}" class="chat-me-tag">我</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
+    <view class="chat-input-row">
+      <input class="chat-input" value="{{chatMsg}}" bindinput="onChatInput" placeholder="输入消息..." confirm-type="send" bindconfirm="sendChat" maxlength="200" />
+      <button class="chat-send-btn" bindtap="sendChat">发送</button>
+    </view>
+  </view>
+</view>

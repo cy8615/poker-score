@@ -1,0 +1,17 @@
+# 服务端
+server/data/
+server/avatars/
+server/node_modules/
+server/*.bak
+
+# 小程序
+miniapp/node_modules/
+miniapp/miniprogram_npm/
+miniapp/private.*
+miniapp/*.key
+miniapp/project.private.config.json
+
+# 系统
+.DS_Store
+Thumbs.db
+*.log

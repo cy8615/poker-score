@@ -1,0 +1,103 @@
+<!-- 首页 -->
+<view class="container">
+  <!-- 微信头像昵称 -->
+  <view wx:if="{{profile.hasProfile}}" class="profile-bar">
+    <image wx:if="{{profile.avatarUrl && !profile.avatarFail}}" class="prof-avatar" src="{{profile.avatarUrl}}" mode="aspectFill" binderror="onAvatarError" />
+    <text wx:else class="prof-avatar-text">{{profile.nickName[0]}}</text>
+    <text class="prof-nickname">{{profile.nickName}}</text>
+  </view>
+  <view wx:else class="profile-bar">
+    <text class="prof-avatar-text">?</text>
+    <text class="prof-nickname prof-nickname-dim" bindtap="showAuth">设置头像昵称</text>
+  </view>
+
+  <view class="hero">
+    <text class="hero-icon">🃏</text>
+    <text class="hero-title">牌局记账</text>
+    <text class="hero-sub">创建房间，分享房号给牌友</text>
+  </view>
+
+  <view class="actions">
+    <view class="action-card" bindtap="showCreate">
+      <text class="act-icon">♠️</text>
+      <text class="act-title">创建房间</text>
+      <text class="act-desc">我是房主</text>
+    </view>
+    <view class="action-card" bindtap="showJoin">
+      <text class="act-icon">🎴</text>
+      <text class="act-title">加入房间</text>
+      <text class="act-desc">输入房号</text>
+    </view>
+  </view>
+
+  <!-- 最近房间 -->
+  <view wx:if="{{recentRooms.length}}" class="recent-list">
+    <view class="section-label">最近房间</view>
+    <view class="recent-item" wx:for="{{recentRooms}}" wx:key="id" bindtap="enterRoom" data-id="{{item.id}}">
+      <text class="r-icon">{{item.icon}}</text>
+      <view class="r-info">
+        <text class="r-name">{{item.name}}</text>
+        <text class="r-hint">点击进入</text>
+      </view>
+      <text class="r-meta">{{item.meta}}</text>
+    </view>
+  </view>
+
+  <view class="stats">最近:{{roomCount}}间 · 身份:{{identityCount}}间</view>
+  <view class="cache-area">
+    <button class="cache-btn" bindtap="clearLocalData">清除本地缓存</button>
+    <view class="version-tag">v1.0.15</view>
+  </view>
+</view>
+
+<!-- 创建弹窗 -->
+<view class="modal-mask" wx:if="{{showCreateModal}}" bindtap="closeModals">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">创建房间</text>
+    <text class="modal-sub">输入你的昵称加入牌局</text>
+    <view class="input-row">
+      <input class="input input-flex" value="{{createName}}" placeholder="你的名字" maxlength="8" bindinput="onCreateName" />
+      <text class="rnd-btn" bindtap="randomCreateName">↻</text>
+    </view>
+    <button class="btn btn-primary btn-block" bindtap="doCreate">创建并加入</button>
+  </view>
+</view>
+
+<!-- 加入弹窗 -->
+<view class="modal-mask" wx:if="{{showJoinModal}}" bindtap="closeModals">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">加入房间</text>
+    <text class="modal-sub">房间号：<text class="modal-room-id">{{joinRoomId}}</text></text>
+    <view class="input-row">
+      <input class="input input-flex" value="{{joinName}}" placeholder="你的名字" maxlength="8" bindinput="onJoinName" />
+      <text class="rnd-btn" bindtap="randomJoinName">↻</text>
+    </view>
+    <button class="btn btn-primary btn-block" bindtap="doJoinFinal">加入房间</button>
+  </view>
+</view>
+
+<!-- 房间号输入弹窗 -->
+<view class="modal-mask" wx:if="{{showRoomIdModal}}" bindtap="closeModals">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">加入房间</text>
+    <text class="modal-sub">输入4位房间号</text>
+    <input class="input room-input" value="{{roomIdInput}}" placeholder="房间号" maxlength="4" type="number" bindinput="onRoomIdInput" />
+    <button class="btn btn-primary btn-block" bindtap="doJoin">下一步</button>
+  </view>
+</view>
+
+<!-- 授权弹窗 -->
+<view class="modal-mask" wx:if="{{showAuthModal}}" catchtap="noop">
+  <view class="modal-box" catchtap="noop">
+    <text class="modal-title">设置头像与昵称</text>
+    <view class="auth-row">
+      <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{authAvatarUrl}}" class="prof-avatar" src="{{authAvatarUrl}}" mode="aspectFill" />
+        <text wx:else class="prof-avatar-placeholder">+</text>
+      </button>
+      <input class="prof-nickname-input" type="nickname" placeholder="点击获取微信昵称" bindblur="onNicknameBlur" />
+    </view>
+    <button class="btn btn-primary btn-block auth-done-btn" bindtap="finishAuth">完成</button>
+    <view class="auth-skip" bindtap="closeAuthModal">暂不设置</view>
+  </view>
+</view>

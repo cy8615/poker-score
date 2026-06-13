@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>牌局记账</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f1eb;--surface:#fff;--surface2:#faf8f5;--text:#2c2416;--text2:#6b5e4a;
+  --text3:#a69980;--accent:#c8952e;--accent-bg:#fef7e8;--accent-border:#f0d78c;
+  --win:#2d8a56;--win-bg:#eaf7ef;--lose:#c44a3f;--lose-bg:#fdf0ee;
+  --border:#e8e1d4;--border2:#f0ebe0;
+  --shadow:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 4px 24px rgba(0,0,0,.07);
+  --radius:14px;--radius-sm:10px;
+  --font:'SF Pro Display','PingFang SC',-apple-system,sans-serif;
+  --font-mono:'SF Mono','Menlo','Consolas',monospace;
+  --safe:env(safe-area-inset-bottom,0px);
+}
+html{font-size:16px;height:100%;overflow:hidden}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
+}
+#app{height:100%;overflow-y:auto;overflow-x:hidden}
+
+h1{font-size:1.5rem;font-weight:700;letter-spacing:-0.02em}
+h2{font-size:1.2rem;font-weight:650}
+
+.view{display:none;padding:16px 16px calc(24px + var(--safe));min-height:100%}
+.view.active{display:block;animation:fadeIn .25s ease-out}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:none;border-radius:var(--radius-sm);font-family:var(--font);
+  font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s;
+  min-height:44px;min-width:44px;
+}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(200,149,46,.3)}
+.btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-ghost{background:transparent;color:var(--text2);padding:6px 12px}
+.btn-danger{background:var(--lose-bg);color:var(--lose)}
+.btn-sm{padding:6px 14px;font-size:.8rem;border-radius:8px;min-height:34px}
+.btn-block{width:100%}
+.btn-icon{padding:8px;border-radius:50%}
+
+.input-group{margin-bottom:10px}
+.input-label{display:block;font-size:.78rem;font-weight:500;color:var(--text2);margin-bottom:4px}
+.input{
+  width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--text);font-family:var(--font);font-size:1.05rem;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(200,149,46,.1)}
+.input::placeholder{color:var(--text3)}
+
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--text);color:#fff;padding:10px 22px;border-radius:20px;
+  font-size:.85rem;font-weight:500;box-shadow:var(--shadow-lg);
+  z-index:100;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  z-index:50;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal{
+  background:var(--surface);border-radius:16px;
+  width:calc(100% - 40px);max-width:380px;max-height:80vh;overflow-y:auto;
+  padding:24px 22px;
+  box-shadow:0 8px 40px rgba(0,0,0,.22);
+  transform:scale(.92);opacity:0;transition:transform .28s cubic-bezier(.32,.72,0,1),opacity .22s;
+}
+.modal-overlay.show .modal{transform:scale(1);opacity:1}
+.modal-handle{display:none}
+
+.modal h2{font-size:1.2rem;font-weight:700;text-align:center;margin:0 0 6px}
+.modal .modal-sub{text-align:center;color:var(--text2);font-size:.85rem;margin:0 0 22px;line-height:1.5}
+.modal .modal-divider{height:1px;background:var(--border);margin:18px 0}
+.modal .input-group{margin-bottom:16px}
+.modal .input{font-size:1.05rem;padding:13px 16px}
+.modal .btn-block{margin-top:0;font-size:.95rem;min-height:48px}
+.closed-settle{background:var(--accent-bg);border-radius:10px;padding:10px 12px;margin-top:10px}
+.closed-row{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--border)}
+.closed-row:last-child{border-bottom:none}
+.closed-row>span:nth-child(2){flex:1;font-size:.9rem}
+.closed-row>span:last-child{font-weight:700;font-size:1.05rem}
+
+/* Home */
+.home-hero{text-align:center;padding:32px 0 8px}
+.home-hero .icon{
+  width:68px;height:68px;margin:0 auto 14px;border-radius:18px;
+  background:linear-gradient(135deg,#f5d78c,#c8952e);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.8rem;box-shadow:0 8px 24px rgba(200,149,46,.18);
+}
+.home-hero p{color:var(--text2);font-size:.88rem;margin-top:3px}
+
+.home-actions{display:flex;gap:10px;margin:20px 0}
+.home-action{
+  flex:1;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 14px;cursor:pointer;
+  transition:all .15s;box-shadow:var(--shadow);
+}
+.home-action:active{transform:scale(.97)}
+.home-action .act-icon{font-size:1.4rem;margin-bottom:6px}
+.home-action .act-title{font-weight:650;font-size:.9rem;margin-bottom:2px}
+.home-action .act-desc{font-size:.74rem;color:var(--text3)}
+
+.recent-rooms{margin-top:22px}
+.section-label{font-size:.78rem;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.recent-room{
+  display:flex;align-items:center;gap:12px;background:var(--surface);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:8px;
+  box-shadow:var(--shadow);cursor:pointer;transition:all .12s;
+}
+.recent-room:active{background:var(--surface2)}
+
+/* Room Top */
+.room-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.room-top-info{flex:1;min-width:0}
+.room-id-tag{
+  display:inline-flex;align-items:center;gap:4px;background:var(--accent-bg);
+  color:var(--accent);border:1px solid var(--accent-border);
+  font-family:var(--font-mono);font-size:.76rem;font-weight:600;
+  padding:3px 10px;border-radius:10px;margin-top:3px;
+}
+.my-name-tag{
+  display:inline-flex;align-items:center;gap:3px;background:var(--win-bg);
+  color:var(--win);border:1px solid #c8e6d0;
+  font-size:.74rem;font-weight:600;padding:3px 10px;border-radius:10px;margin-top:3px;margin-left:6px;
+}
+
+/* Scoreboard */
+#chat-float{position:fixed;right:12px;bottom:80px;z-index:999;display:none;flex-direction:column;width:280px;max-height:420px;border-radius:var(--radius);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.12);overflow:hidden;border:1px solid var(--border)}
+#chat-float.open{display:flex}
+#chat-float .chat-header{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:.78rem;font-weight:600;color:var(--text);flex-shrink:0}
+#chat-float .chat-header button{background:none;border:none;font-size:1rem;color:var(--text3);cursor:pointer;padding:0 4px;line-height:1}
+#chat-float .chat-msgs{flex:1;overflow-y:auto;min-height:40px;padding:4px 0}
+.chat-float-btn{position:fixed;right:12px;bottom:40px;z-index:1000;width:40px;height:40px;border-radius:50%;background:var(--win);color:#fff;border:none;font-size:1.1rem;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.15);display:none;align-items:center;justify-content:center;transition:transform .15s}
+.chat-float-btn:active{transform:scale(.92)}
+.chat-float-btn .badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;border-radius:8px;background:#f44;color:#fff;font-size:.6rem;display:flex;align-items:center;justify-content:center;padding:0 4px;display:none}
+.chat-float-btn .badge.show{display:flex}
+
+.chat-area{display:none}
+.chat-time{text-align:center;font-size:.58rem;color:var(--text3);padding:6px 0;letter-spacing:.5px}
+.chat-empty{font-size:.65rem;color:var(--text3);text-align:center;padding:12px 0}
+.chat-row{display:flex;align-items:flex-start;padding:3px 10px;gap:6px}
+.chat-row.me{flex-direction:row-reverse}
+.chat-avatar{position:relative;width:28px;height:28px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:var(--win);flex-shrink:0;user-select:none}
+.chat-row.me .chat-avatar{display:none}
+.chat-body{max-width:78%;display:flex;flex-direction:column}
+.chat-row.me .chat-body{align-items:flex-end}
+.chat-name{font-size:.6rem;color:var(--text3);margin-bottom:1px;padding-left:6px}
+.chat-text{font-size:.76rem;padding:6px 8px;border-radius:3px;background:#f0f0f0;word-break:break-all;position:relative;line-height:1.35}
+.chat-row.me .chat-text{background:var(--win);color:#fff}
+.chat-text::before{content:'';position:absolute;top:8px;left:-4px;width:0;height:0;border:4px solid transparent;border-right-color:#f0f0f0;border-left:0}
+.chat-row.me .chat-text::before{left:auto;right:-4px;border:4px solid transparent;border-left-color:var(--win);border-right:0}
+.chat-me-tag{font-size:.65rem;color:var(--text3);align-self:flex-start;margin-top:8px;margin-left:2px;flex-shrink:0}
+#chat-float .chat-input-row{display:flex;border-top:1px solid var(--border);padding:6px 8px;gap:6px;flex-shrink:0}
+#chat-float .chat-input-row input{flex:1;background:var(--bg);border:none;border-radius:4px;padding:6px 8px;font-size:.76rem;outline:none;color:var(--text)}
+#chat-float .chat-input-row input::placeholder{color:var(--text3)}
+#chat-float .chat-input-row button{border:none;background:var(--win);color:#fff;border-radius:4px;padding:4px 12px;font-size:.74rem;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+.scoreboard{margin-bottom:16px}
+.scoreboard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+
+.score-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--surface);border-radius:var(--radius-sm);
+  padding:14px 16px;margin-bottom:6px;
+  box-shadow:var(--shadow);cursor:pointer;transition:all .15s;
+  animation:slideUp .25s ease-out both;
+}
+.score-row:active{transform:scale(.98);background:var(--surface2)}
+.score-row.is-me{border:2px solid var(--win);background:var(--win-bg)}
+.score-row:nth-child(1){animation-delay:0s}
+.score-row:nth-child(2){animation-delay:.04s}
+.score-row:nth-child(3){animation-delay:.08s}
+.score-row:nth-child(4){animation-delay:.12s}
+.score-row:nth-child(5){animation-delay:.16s}
+.score-row:nth-child(6){animation-delay:.2s}
+
+.avatar{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.9rem;flex-shrink:0;position:relative;overflow:hidden;
+}
+.avatar-img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;z-index:1}
+.chat-avatar .avatar-img{border-radius:3px}
+.score-info{flex:1;min-width:0}
+.score-name{font-weight:600;font-size:.95rem}
+.score-me{font-size:.7rem;color:var(--win);font-weight:600}
+.score-value{font-family:var(--font-mono);font-size:1.15rem;font-weight:700;margin-left:auto}
+.score-value.win{color:var(--win)}
+.score-value.lose{color:var(--lose)}
+.score-value.zero{color:var(--text3)}
+
+.transfer-hint{font-size:.68rem;color:var(--text3);margin-top:2px}
+
+/* Timeline */
+.timeline{margin-top:4px}
+.timeline-item{
+  display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border2);
+}
+.timeline-item:last-child{border-bottom:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.tl-dot.transfer-dot{background:#5b8def}
+.tl-body{flex:1;min-width:0}
+.tl-desc{font-size:.86rem;font-weight:500}
+.tl-meta{font-size:.72rem;color:var(--text3);margin-top:1px}
+.tl-amt{font-family:var(--font-mono);font-weight:650;font-size:.88rem}
+
+.tx-group{background:var(--accent-bg);border-radius:10px;padding:6px 12px;margin-bottom:12px}
+.tx-group-time{font-size:.68rem;color:var(--text3);text-align:center;margin-bottom:2px}
+.tx-group .timeline-item{border-bottom:none;padding:8px 0}
+.tx-group .timeline-item+.timeline-item{border-top:1px solid var(--border2)}
+
+.empty{text-align:center;padding:32px 20px;color:var(--text3)}
+.empty .e-icon{font-size:2.4rem;margin-bottom:8px;opacity:.5}
+.empty p{font-size:.86rem}
+
+/* Amount pills */
+.amount-pills{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.amount-pill{
+  padding:11px 0;border-radius:12px;background:var(--surface2);
+  border:1px solid var(--border);font-size:.92rem;font-weight:550;
+  color:var(--text2);cursor:pointer;transition:all .1s;text-align:center;
+  min-height:44px;display:flex;align-items:center;justify-content:center;
+}
+.amount-pill:active{background:var(--accent-bg);border-color:var(--accent)}
+
+::-webkit-scrollbar{width:0}
+
+@media(min-width:520px){
+  .view{max-width:460px;margin:0 auto}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal"></div>
+<script>
+
+const API='/poker-api';
+const MYKEY='poker_my_v5';
+
+const AC=[
+  ['#f5d78c','#8b6914'],['#7ecb76','#1a5c12'],['#6cb8f0','#0d47a1'],
+  ['#f08080','#a31515'],['#c89be0','#5c158a'],['#f0a870','#a34212'],
+  ['#a0b0c0','#37474f'],['#7ec8d8','#005662']
+];
+
+let roomId=null, myId=null, roomData=null, pollTimer=null, transferLock=false;
+let durationTimer=null;
+
+function loadMy(){try{return JSON.parse(localStorage.getItem(MYKEY)||'{"identities":{},"rooms":[]}')}catch{return{identities:{},rooms:[]}}}
+function saveMy(o){try{localStorage.setItem(MYKEY,JSON.stringify(o))}catch{}}
+function clearLocalData(){
+  if(!confirm('确定清除本地缓存？\n\n清除后最近房间列表和身份记录将丢失，但服务器端的房间数据不受影响。'))return;
+  localStorage.removeItem(MYKEY);
+  M={identities:{},rooms:[]};
+  renderHome();
+}
+let M=loadMy();
+
+async function api(path,body){
+  try{
+    let opts={method:body?'POST':'GET',headers:{'Content-Type':'application/json'}};
+    if(body)opts.body=JSON.stringify(body);
+    let r=await fetch(API+path,opts);
+    let d=await r.json();
+    if(!r.ok)throw new Error(d.error||'请求失败');
+    return d;
+  }catch(e){throw e}
+}
+
+function esc(s){let d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function fmt(v){return v>0?'+'+v:''+v}
+function cls(v){return v>0?'win':v<0?'lose':'zero'}
+function av(name,avatarUrl,i){let[bg,tx]=AC[i%8];if(avatarUrl)return`<span class="avatar" style="background:${bg};color:${tx}"><img class="avatar-img" src="${esc(avatarUrl)}" onerror="this.style.display='none'">${(name||'?')[0]}</span>`;return`<span class="avatar" style="background:${bg};color:${tx}">${(name||'?')[0]}</span>`}
+function tfmt(ts){let d=new Date(ts),p=n=>String(n).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}
+function groupTxs(txs){
+  let sorted=[...txs].sort((a,b)=>a.timestamp-b.timestamp);
+  let groups=[];
+  for(let i=0;i<sorted.length;){
+    let g=[sorted[i]],first=sorted[i].timestamp;
+    i++;
+    while(i<sorted.length&&sorted[i].timestamp-first<=60000){g.push(sorted[i]);i++}
+    groups.push({time:first,items:g.reverse()});
+  }
+  return groups;
+}
+function randomName(id){
+  let e=document.getElementById(id);
+  if(e){e.value=rndName()}
+}
+function rndName(){
+  const A=['潇洒','沉稳','豪气','机智','冷静','热情','淡定','幽默','低调','霸气'];
+  const B=['牌手','玩家','赌神','老千','高手','新人','大佬','侠客','战神','猎手'];
+  return A[Math.floor(Math.random()*10)]+B[Math.floor(Math.random()*10)];
+}
+
+function addRecentRoom(id){
+  if(!M.rooms)M.rooms=[];
+  M.rooms=M.rooms.filter(r=>r!==id);
+  M.rooms.unshift(id);
+  if(M.rooms.length>10)M.rooms.length=10;
+  saveMy(M);
+}
+
+let toastT;
+function toast(m){let e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),1800)}
+function showClosedRoom(room){
+  let sorted=[...room.members].sort((a,b)=>b.score-a.score);
+  modal(`<div class="modal"><h2>房间已关闭</h2>
+    <p class="modal-sub">房间号：${room.id}</p>
+    <div class="closed-settle">${sorted.map((m,i)=>`
+      <div class="closed-row">${av(m.name,m.avatarUrl,m.colorIdx)}<span>${esc(m.name)}</span><span class="${cls(m.score)}">${fmt(m.score)}</span></div>`).join('')}</div>
+    <button class="btn btn-primary btn-block" style="margin-top:14px" onclick="closeM()">知道了</button></div>`);
+}
+
+function modal(h){let e=document.getElementById('modal');e.innerHTML=h;e.classList.add('show')}
+function closeM(){document.getElementById('modal').classList.remove('show')}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeM()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
+
+let curView='home';
+function nav(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  let e=document.getElementById('view-'+v);
+  if(e)e.classList.add('active');
+  curView=v;document.getElementById('app').scrollTop=0;
+}
+
+// ═══ Polling ═══
+function startPolling(){
+  stopPolling();
+  if(!roomId)return;
+  pollTimer=setInterval(async()=>{
+    try{
+      let d=await api('/room?id='+roomId);
+      roomData=d.room;refreshRoom();
+    }catch{
+    let el=document.getElementById('rmeta-'+id);
+    if(el){el.closest('.recent-room')?.remove()}
+    M.rooms=M.rooms.filter(r=>r!==id);saveMy(M);
+  }
+  },30000);
+}
+function stopPolling(){if(pollTimer){clearInterval(pollTimer);pollTimer=null}}
+
+function fmtDuration(ms){
+  let s=Math.floor(ms/1000);
+  let h=Math.floor(s/3600);s%=3600;
+  let m=Math.floor(s/60);s%=60;
+  let p=[];
+  if(h>0)p.push(h+'小时');
+  if(m>0||h>0)p.push(m+'分');
+  p.push(s+'秒');
+  return p.join('');
+}
+function startDuration(){
+  stopDuration();
+  if(!roomData)return;
+  let el=document.getElementById('dur');
+  if(!el)return;
+  let update=()=>{
+    let ms=Date.now()-roomData.createdAt;
+    el.textContent='对局时长：'+fmtDuration(ms);
+  };
+  update();
+  durationTimer=setInterval(update,1000);
+}
+function stopDuration(){if(durationTimer){clearInterval(durationTimer);durationTimer=null}}
+
+// ═══ HOME ═══
+function renderHome(){
+  let roomIds=M.rooms||[];
+  let recents=roomIds.length?`
+    <div class="recent-rooms">
+      <div class="section-label">最近房间</div>
+      ${roomIds.slice(0,6).map(id=>`
+        <div class="recent-room" onclick="pickNameThenJoin('${id}')">
+          <span id="ricon-${id}" style="font-size:1.3rem">🃏</span>
+          <div style="flex:1;min-width:0">
+            <div id="rname-${id}" style="font-weight:650;font-size:.9rem">${esc(id)}</div>
+            <div style="font-size:.74rem;color:var(--text3)">点击进入</div>
+          </div>
+          <span id="rmeta-${id}" style="font-family:var(--font-mono);font-size:.68rem;color:var(--text3);text-align:right;min-width:50px">--</span>
+        </div>`).join('')}
+    </div>`:'';
+
+  document.getElementById('view-home')?.remove();
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="view active" id="view-home">
+      <div class="home-hero">
+        <div class="icon">🃏</div>
+        <h1>牌局记账</h1>
+        <p>创建房间，分享房号给牌友</p>
+      </div>
+      <div class="home-actions">
+        <div class="home-action" onclick="showCreate()">
+          <div class="act-icon">♠️</div>
+          <div class="act-title">创建房间</div>
+          <div class="act-desc">我是房主</div>
+        </div>
+        <div class="home-action" onclick="showJoin()">
+          <div class="act-icon">🎴</div>
+          <div class="act-title">加入房间</div>
+          <div class="act-desc">输入房号</div>
+        </div>
+      </div>
+      ${recents}
+      <div style="margin-top:10px;font-size:.68rem;color:var(--text3);text-align:center">
+        最近:${roomIds.length}间 · 身份:${Object.keys(M.identities).length}间
+      </div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn btn-ghost btn-sm" onclick="clearLocalData()" style="color:var(--text3);font-size:.7rem;opacity:.6">清除本地缓存</button>
+      </div>
+    </div>`);
+
+  // 异步加载每个房间的人数与自己分数
+  roomIds.slice(0,6).forEach(id=>{loadRoomMeta(id)});
+}
+async function loadRoomMeta(id){
+  try{
+    let d=await api('/room?id='+id);
+    if(!d.room){
+      let el=document.getElementById('rmeta-'+id);
+      if(el){el.closest('.recent-room')?.remove()}
+      M.rooms=M.rooms.filter(r=>r!==id);saveMy(M);
+      return;
+    }
+    let room=d.room;
+    let count=room.members.length;
+    let savedMid=M.identities[id];
+    let myScore='';
+    if(savedMid){
+      let me=room.members.find(m=>m.id===savedMid);
+      if(me)myScore=fmt(me.score);
+    }
+    let el=document.getElementById('rmeta-'+id);
+    if(el){
+      el.textContent=count+'人'+(myScore?' · '+myScore:'');
+      if(savedMid&&myScore){
+        el.style.color=myScore.startsWith('+')?'var(--win)':myScore.startsWith('-')?'var(--lose)':'var(--text3)';
+      }
+    }
+    let ic=document.getElementById('ricon-'+id);
+    if(ic&&room.icon)ic.textContent=room.icon;
+    let rn=document.getElementById('rname-'+id);
+    if(rn&&room.creatorId&&savedMid===room.creatorId)rn.innerHTML=esc(id)+' <span style="font-size:.65rem;color:var(--text3)">我是房主</span>';
+  }catch{
+    let el=document.getElementById('rmeta-'+id);
+    if(el){el.closest('.recent-room')?.remove()}
+    M.rooms=M.rooms.filter(r=>r!==id);saveMy(M);
+  }
+}
+
+// ═══ Create ═══
+function showCreate(){
+  let defName=M.defName||rndName();
+  modal(`
+    <div class="modal"><h2>创建房间</h2>
+    <p class="modal-sub">输入你的牌桌昵称</p>
+    <div class="input-group" style="position:relative"><input class="input" id="cr-me" value="${defName}" placeholder="你的名字" maxlength="8" autocomplete="off" style="padding-right:36px"><button class="btn btn-ghost btn-icon" onclick="randomName('cr-me')" title="换一个" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:.85rem;padding:4px 8px">↻</button></div>
+    <button class="btn btn-primary btn-block" onclick="doCreate()">创建并加入</button></div>`);
+  
+}
+async function doCreate(){
+  let name=document.getElementById('cr-me').value.trim();
+  if(!name){toast('请输入你的名字');return}
+  try{
+    let d=await api('/create',{name});
+    roomId=d.roomId;myId=d.memberId;roomData=d.room;
+    M.defName=name;M.identities[roomId]=myId;addRecentRoom(roomId);saveMy(M);
+    closeM();renderRoom();nav('room');if(!roomData.closed)startPolling();
+  }catch(e){toast('创建失败:'+e.message)}
+}
+
+// ═══ Join ═══
+async function showJoin(){
+  let defRoom='';
+  try{
+    let d=await api('/rooms');
+    if(d.rooms&&d.rooms.length>0)defRoom=d.rooms[0].id;
+  }catch{}
+  modal(`
+    <div class="modal"><h2>加入房间</h2>
+    <p class="modal-sub">输入4位房间号</p>
+    <div class="input-group"><input class="input" id="jn-id" placeholder="房间号" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${defRoom}" style="font-family:var(--font-mono);text-align:center;font-size:1.3rem;letter-spacing:.2em"></div>
+    <button class="btn btn-primary btn-block" onclick="doJoin()">下一步</button></div>`);
+}
+async function doJoin(){
+  let id=document.getElementById('jn-id').value.trim();
+  if(!id){toast('请输入房间号');return}
+  try{
+    let d=await api('/room?id='+id);
+    if(!d.room){toast('房间不存在');return}
+    if(d.room.closed){closeM();showClosedRoom(d.room);return}
+    closeM();pickNameThenJoin(id);
+  }catch(e){toast('房间不存在')}
+}
+async function pickNameThenJoin(id){
+  let savedMid=M.identities[id];
+  // 有保存的身份，先查API确认成员是否还在房间
+  if(savedMid){
+    try{
+      let d=await api('/room?id='+id);
+      if(d.room&&d.room.closed){showClosedRoom(d.room);return}
+      if(d.room&&d.room.members.find(m=>m.id===savedMid)){
+        roomId=id;myId=savedMid;roomData=d.room;
+        addRecentRoom(id);saveMy(M);
+        renderRoom();nav('room');if(!roomData.closed)startPolling();return;
+      }
+    }catch{}
+  }
+  // 没有身份或失效，弹窗输入
+  let defName=M.defName||rndName();
+  modal(`
+    <div class="modal"><h2>加入房间</h2>
+    <p class="modal-sub">房间号：<b style="font-family:var(--font-mono)">${id}</b></p>
+    <div class="input-group" style="position:relative"><input class="input" id="jn-name" value="${defName}" placeholder="你的名字" maxlength="8" autocomplete="off" style="padding-right:36px"><button class="btn btn-ghost btn-icon" onclick="randomName('jn-name')" title="换一个" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);font-size:.85rem;padding:4px 8px">↻</button></div>
+    <button class="btn btn-primary btn-block" onclick="doJoinFinal('${id}')">加入房间</button></div>`);
+  
+}
+async function doJoinFinal(id){
+  let name=document.getElementById('jn-name').value.trim();
+  if(!name){toast('请输入你的名字');return}
+  try{
+    let d=await api('/join',{roomId:id,name});
+    roomId=id;myId=d.memberId;roomData=d.room;
+    M.defName=name;M.identities[roomId]=myId;addRecentRoom(roomId);saveMy(M);
+    closeM();renderRoom();nav('room');if(!roomData.closed)startPolling();
+  }catch(e){toast('加入失败:'+e.message)}
+}
+
+// ═══ ROOM ═══
+function fmtChatTime(ts){
+  let d=new Date(ts),h=d.getHours(),m=d.getMinutes();
+  return (h<10?'0'+h:h)+':'+(m<10?'0'+m:m);
+}
+function renderChat(room){
+  let msgs=room.recentMessages||[];
+  if(msgs.length===0) return '<div class="chat-empty">暂无消息</div>';
+  let html='',lastTime=0;
+  msgs.forEach((m,i)=>{
+    let sender=room.members.find(x=>x.id===m.memberId);
+    let isMe=m.memberId===myId;
+    if(i===0||m.time-lastTime>120000){
+      html+='<div class="chat-time">'+fmtChatTime(m.time)+'</div>';
+    }
+    lastTime=m.time;
+    let [bg,tx]=AC[(sender?.colorIdx||0)%8];
+    html+='<div class="chat-row'+(isMe?' me':'')+'">'+
+      '<div class="chat-avatar" style="background:'+bg+';color:'+tx+'">'+(isMe?'':(sender?.avatarUrl?'<img class="avatar-img" src="'+esc(sender.avatarUrl)+'" onerror="this.style.display=\'none\'">':'')+(sender?.name||'?')[0])+'</div>'+
+      (isMe?'<span class="chat-me-tag">我</span>':'')+'<div class="chat-body">'+
+        (isMe?'':'<div class="chat-name">'+esc(sender?.name||'?')+'</div>')+
+        '<div class="chat-text">'+esc(m.text)+'</div>'+
+      '</div></div>';
+  });
+  return html;
+}
+
+function renderRoom(){
+  let room=roomData;if(!room){nav('home');return}
+  let isClosed=room.closed;
+  let me=room.members.find(m=>m.id===myId);
+  let sorted=[...room.members].sort((a,b)=>b.score-a.score);
+
+  let board=room.members.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
+    :sorted.map((m,i)=>{
+      let isMe=m.id===myId;
+      return`<div class="score-row${isMe?' is-me':''}" style="position:relative" onclick="${isMe||isClosed?'':'showPay(\''+m.id+'\')'}">
+        ${!room.closed&&m.score===0&&!isMe?`<span onclick="event.stopPropagation();kickMember(\'${m.id}\',\'${esc(m.name)}\')" style="position:absolute;top:0;right:4px;font-size:18px;color:var(--text3);line-height:1.6;cursor:pointer">✕</span>`:''}
+        <span style="font-size:.72rem;color:var(--text3);width:16px;text-align:center">${i+1}</span>
+        ${av(m.name,m.avatarUrl,m.colorIdx)}
+        <div class="score-info">
+          <div class="score-name">${esc(m.name)}${isMe?' <span class="score-me">我</span>':''}</div>
+          ${isMe?'':'<div class="transfer-hint">点击转账</div>'}
+        </div>
+        <div class="score-value ${cls(m.score)}">${fmt(m.score)}</div>
+      </div>`;
+    }).join('');
+
+  let txs=[...room.transactions].reverse();
+  let timeline=txs.length===0?`<div class="empty" style="padding:20px"><p style="font-size:.82rem">暂无记录</p></div>`
+    :`<div class="timeline">${groupTxs([...txs].reverse()).reverse().map(g=>`
+      <div class="tx-group">
+        <div class="tx-group-time">${tfmt(g.time)}</div>
+        ${g.items.map(tx=>{
+          let f=room.members.find(m=>m.id===tx.fromMemberId),t=room.members.find(m=>m.id===tx.toMemberId);          return`<div class="timeline-item">
+            <div class="tl-dot transfer-dot"></div>
+            <div class="tl-body">
+              <div class="tl-desc">${esc(f?.name||'?')}${f?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''} → ${esc(t?.name||'?')}${t?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''}</div>
+            </div>
+            <div class="tl-amt">${tx.amount}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('')}</div>`;
+
+  document.getElementById('view-room')?.remove();
+  document.getElementById('app').insertAdjacentHTML('beforeend',`
+    <div class="view active" id="view-room">
+      <div class="room-top">
+        <button class="btn btn-ghost btn-icon" onclick="leaveRoom()">←</button>
+        <div class="room-top-info">
+          ${isClosed?'<div style="font-size:.68rem;color:var(--text3);margin-bottom:2px">结算时间：'+tfmt(room.settledAt||0)+'</div>':''}
+          <h2 style="margin:0"><span style="margin-right:4px">${room.icon||'🃏'}</span>${esc(room.id)}${isClosed?' <span style="font-size:.65rem;color:var(--lose)">已结算</span>':''}${me?.id===room.creatorId&&!isClosed?' <span style="font-size:.65rem;color:var(--text3)">我是房主</span>':!isClosed?' <span style="font-size:.65rem;color:var(--text3)">房主：'+esc(room.members.find(m=>m.id===room.creatorId)?.name||'?')+'</span>':''}</h2>
+          <div>
+            <span id="dur" class="my-name-tag">${isClosed?'对局时长：'+fmtDuration(room.settleDuration||0):'对局时长：--'}</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-icon" onclick="doManualRefresh()" title="刷新">↻</button>
+        ${isClosed?'':`<button class="btn btn-ghost btn-sm" onclick="showMenu()">⋯</button>`}
+      </div>
+      <div class="scoreboard">
+        <div class="scoreboard-top">
+          <h3>积分排行</h3>
+          <span style="font-size:.76rem;color:var(--text3)">${room.members.length}人</span>
+        </div>
+        ${board}
+      </div>
+      <div class="section-label" style="margin-top:4px">转账记录</div>
+      <div class="timeline">${timeline}</div>
+    </div>`);
+  if(!isClosed)startDuration();
+  let cb=document.getElementById('chat-btn');if(cb)cb.style.display=isClosed?'none':'flex';
+  document.getElementById('chat-float').classList.remove('open');
+  updateChatBadge();
+}
+
+function refreshChat(){
+  let el=document.getElementById('chat-msgs');
+  if(!el){return}
+  el.innerHTML=renderChat(roomData);
+  el.scrollTop=el.scrollHeight;
+}
+function updateChatBadge(){
+  let b=document.getElementById('chat-badge');
+  if(!b||!roomData||roomData.closed){if(b)b.classList.remove('show');return}
+  let msgs=roomData.recentMessages||[];
+  let lastRead=loadChatRead();
+  let unread=msgs.filter(m=>m.time>lastRead).length;
+  b.textContent=unread>99?'99+':unread;
+  b.classList.toggle('show',unread>0);
+}
+
+function getChatReadKey(){return 'chatRead_'+roomId}
+function loadChatRead(){
+  try{let v=localStorage.getItem(getChatReadKey());return v?parseInt(v):0}catch{return 0}
+}
+function saveChatRead(ts){
+  try{localStorage.setItem(getChatReadKey(),ts.toString())}catch{}
+}
+
+function toggleChat(){
+  let f=document.getElementById('chat-float');
+  let c=roomData&&!roomData.closed;
+  if(!f||!c)return;
+  f.classList.toggle('open');
+  let inp=document.getElementById('chat-input');
+  if(f.classList.contains('open')){
+    refreshChat();inp&&inp.focus();
+    saveChatRead(Date.now());
+    updateChatBadge();
+  }
+}
+
+async function sendChat(){
+  let inp=document.getElementById('chat-input');
+  if(!inp)return;
+  let text=inp.value.trim();
+  if(!text||text.length>200)return;
+  try{
+    await api('/chat',{roomId,memberId:myId,text});
+    inp.value='';
+    let d=await api('/room?id='+roomId);
+    if(d.room)roomData=d.room;
+    refreshChat();
+  }catch(e){toast('发送失败:'+e.message)}
+}
+
+async function kickMember(memberId,name){
+  if(!confirm("确定将 "+name+" 踢出房间？")) return;
+  try{
+    let d=await api("/kick",{roomId,memberId});
+    roomData=d.room;renderRoom();nav("room");if(!roomData.closed)startPolling();
+    toast("已踢出 "+name);
+  }catch(e){toast("踢出失败:"+e.message)}
+}
+
+async function doManualRefresh(){
+  try{let d=await api("/room?id="+roomId);if(!d.room)return;roomData=d.room}catch{return}
+  refreshRoom();
+}
+function refreshRoom(){
+  let room=roomData;if(!room)return;
+  let sb=document.querySelector('#view-room .scoreboard');
+  refreshChat();
+  let tl=document.querySelector('#view-room .timeline');
+  if(!sb||!tl)return;
+
+  let sorted=[...room.members].sort((a,b)=>b.score-a.score);
+  let board=room.members.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
+    :sorted.map((m,i)=>{
+      let isMe=m.id===myId;
+      return`<div class="score-row${isMe?' is-me':''}" style="position:relative" onclick="${isMe?'':'showPay(\''+m.id+'\')'}">
+          ${!room.closed&&m.score===0&&!isMe?`<span onclick="event.stopPropagation();kickMember(\'${m.id}\',\'${esc(m.name)}\')" style="position:absolute;top:0;right:4px;font-size:18px;color:var(--text3);line-height:1.6;cursor:pointer">✕</span>`:''}
+        <span style="font-size:.72rem;color:var(--text3);width:16px;text-align:center">${i+1}</span>
+        ${av(m.name,m.avatarUrl,m.colorIdx)}
+        <div class="score-info">
+          <div class="score-name">${esc(m.name)}${isMe?' <span class="score-me">我</span>':''}</div>
+          ${isMe?'':'<div class="transfer-hint">点击转账</div>'}
+        </div>
+        <div class="score-value ${cls(m.score)}">${fmt(m.score)}</div>
+      </div>`;
+    }).join('');
+
+  sb.querySelectorAll('.score-row, .empty').forEach(el=>el.remove());
+  let head=sb.querySelector('.scoreboard-top');
+  if(head){head.textContent='';head.innerHTML=`<h3>积分排行</h3><span style="font-size:.76rem;color:var(--text3)">${room.members.length}人</span>`;}
+  sb.insertAdjacentHTML('beforeend',board);
+
+  let txs=[...room.transactions].reverse();
+  tl.innerHTML=txs.length===0?`<div class="empty" style="padding:20px"><p style="font-size:.82rem">暂无记录</p></div>`
+    :groupTxs([...txs].reverse()).reverse().map(g=>`
+      <div class="tx-group">
+        <div class="tx-group-time">${tfmt(g.time)}</div>
+        ${g.items.map(tx=>{
+          let f=room.members.find(m=>m.id===tx.fromMemberId),t=room.members.find(m=>m.id===tx.toMemberId);
+          return`<div class="timeline-item">
+            <div class="tl-dot transfer-dot"></div>
+            <div class="tl-body">
+              <div class="tl-desc">${esc(f?.name||'?')}${f?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''} → ${esc(t?.name||'?')}${t?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''}</div>
+            </div>
+            <div class="tl-amt">${tx.amount}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    `).join('');
+}
+
+function leaveRoom(){
+  stopPolling();stopDuration();roomId=null;myId=null;roomData=null;let cb=document.getElementById('chat-btn');if(cb)cb.style.display='none';document.getElementById('chat-float').classList.remove('open');
+  M.roomId=null;M.myId=null;saveMy(M);
+  nav('home');renderHome();
+}
+
+// ═══ PAY ═══
+window.showPay = function(toId){
+  let room=roomData;if(!room)return;
+  if(toId===myId)return;
+  let toMember=room.members.find(m=>m.id===toId);
+  let me=room.members.find(m=>m.id===myId);
+  if(!toMember||!me)return;
+  modal(`
+    <div class="modal"><h2>转账</h2>
+    <p class="modal-sub">${esc(me.name)} → ${esc(toMember.name)}</p>
+    <div class="input-group" style="margin-bottom:8px">
+      <input class="input" id="pay-amt" type="number" min="1" step="1" placeholder="金额" autocomplete="off" style="font-family:var(--font-mono);font-weight:650;font-size:1.1rem;text-align:center;max-width:140px;margin:0 auto;display:block">
+    </div>
+    <div class="amount-pills" style="margin-bottom:16px;grid-template-columns:repeat(5,1fr)">
+      ${Array.from({length:10},(_,i)=>i+1).map(n=>`<div class="amount-pill" onclick="document.getElementById('pay-amt').value=${n}">${n}</div>`).join('')}
+    </div>
+<button class="btn btn-primary btn-block" onclick="doPay('${toId}')">确认转账</button></div>`);
+};
+
+window.doPay = async function(toId){
+  let amt=parseFloat(document.getElementById('pay-amt').value);
+  if(isNaN(amt)||amt<=0){toast('请输入金额');return}
+  if(transferLock){return}
+  transferLock=true;
+  setTimeout(()=>{transferLock=false;let b=document.querySelector('.modal .btn-primary');if(b){b.disabled=false;b.textContent='确认转账'}},15000);
+  let btn=document.querySelector('.modal .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='转账中...'}
+  let to=roomData.members.find(m=>m.id===toId);try{
+    let d=await api('/transfer',{roomId,fromMemberId:myId,toMemberId:toId,amount:amt,note:''});
+    roomData=d.room;closeM();renderRoom();
+    toast(`已转 ${amt} 给 ${esc(to.name)}`);
+  }catch(e){toast('转账失败:'+e.message)}
+  transferLock=false;
+};
+
+// ═══ Menu ═══
+function showMenu(){
+  let isCreator=roomData.creatorId===myId;
+  modal(`<div class="modal"><h2>房间设置</h2>
+    <div style="background:var(--accent-bg);border-radius:10px;padding:14px;margin-bottom:20px;text-align:center">
+      <div style="font-size:.76rem;color:var(--text2);margin-bottom:6px">分享房间号给牌友</div>
+      <div style="font-family:var(--font-mono);font-size:1.5rem;font-weight:700;margin-bottom:12px">${roomId}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="copy('${roomId}')">复制房号</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="copy('YOUR_BASE_URL/poker.html?room=${roomId}')">复制分享</button>
+      </div>
+    </div>
+    <div class="modal-divider"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-secondary btn-block" onclick="showChangeName()">修改昵称</button>
+      ${isCreator?`<button class="btn btn-secondary btn-block" onclick="doReset()">重置积分</button>`:''}
+      ${isCreator?`<button class="btn btn-secondary btn-block" onclick="doSettle()">积分结算</button>`:''}
+      ${isCreator?`<button class="btn btn-danger btn-block" onclick="doDel()">删除房间</button>`:''}
+    </div></div>`);
+}
+window.copy=function(t){
+  let fallback=()=>{
+    let ta=document.createElement('textarea');
+    ta.value=t;ta.style.position='fixed';ta.style.left='-9999px';
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('已复制')}catch{toast('复制失败')}
+    document.body.removeChild(ta);
+  };
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(t).then(()=>toast('已复制')).catch(fallback);
+  }else{fallback()}
+};
+
+function showAllTx(){
+  let room=roomData;if(!room)return;
+  let txs=[...room.transactions];
+  let groups=groupTxs(txs).reverse();
+  modal(`<div class="modal"><h2>全部记录</h2><p class="modal-sub">${txs.length} 笔转账</p>${txs.length===0?'<div class="empty"><p>暂无记录</p></div>':groups.map(g=>`
+    <div class="tx-group">
+      <div class="tx-group-time">${tfmt(g.time)}</div>
+      ${g.items.map(tx=>{let f=room.members.find(m=>m.id===tx.fromMemberId),t=room.members.find(m=>m.id===tx.toMemberId);return`<div class="timeline-item"><div class="tl-dot transfer-dot"></div><div class="tl-body"><div class="tl-desc">${esc(f?.name||'?')}${f?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''} → ${esc(t?.name||'?')}${t?.id===myId?' <span style="font-size:.65rem;color:var(--text3)">我</span>':''}</div></div><div class="tl-amt">${tx.amount}</div></div>`}).join('')}
+    </div>
+  `).join('')}</div>`);
+}
+async function doReset(){
+  try{let d=await api('/reset',{roomId});roomData=d.room;closeM();renderRoom();toast('已重置')}catch(e){toast('重置失败')}
+}
+function showChangeName(){
+  let me=roomData.members.find(m=>m.id===myId);
+  modal(`<div class="modal"><h2>修改昵称</h2>
+    <p class="modal-sub">当前头像：<img src="${esc(me?.avatarUrl||'')}" style="width:48px;height:48px;border-radius:50%;vertical-align:middle;object-fit:cover" onerror="this.style.display='none'"></p>
+    <p class="modal-sub">当前：${esc(me?.name||'')}</p>
+    <div class="input-group"><input class="input" id="cn-name" value="${esc(me?.name||'')}" placeholder="新昵称" maxlength="8" autocomplete="off"></div><div class="input-group" style="margin-top:12px"><input class="input" id="cn-avatar" value="${esc(me?.avatarUrl||'')}" placeholder="头像URL（可选）" autocomplete="off"></div>
+    <button class="btn btn-primary btn-block" onclick="doChangeName()">保存</button></div>`);
+  setTimeout(()=>{let e=document.getElementById('cn-name');if(e){e.focus();e.select()}},300);
+}
+async function doChangeName(){
+  let name=document.getElementById('cn-name').value.trim();
+  if(!name){toast('请输入昵称');return}
+  try{
+    let av=document.getElementById("cn-avatar").value.trim();let d=await api("/rename",{roomId,memberId:myId,name,avatarUrl:av});
+    roomData=d.room;closeM();renderRoom();toast('昵称已更新');
+  }catch(e){toast('修改失败:'+e.message)}
+}
+async function doSettle(){
+  if(!confirm('确定结算并关闭房间？结算后房间变为只读，不再支持转账等操作。'))return;
+  try{
+    let d=await api('/settle',{roomId,memberId:myId});
+    roomData=d.room;closeM();renderRoom();stopPolling();
+    toast('已结算');
+  }catch(e){toast('结算失败:'+e.message)}
+}
+function doDel(){
+  closeM();
+  modal(`<div class="modal"><h2>删除房间</h2><p class="modal-sub">确定删除房间「${esc(roomId)}」？此操作不可撤销。</p><div style="display:flex;gap:10px"><button class="btn btn-secondary" style="flex:1" onclick="closeM()">取消</button><button class="btn btn-danger" style="flex:1" onclick="doDelConfirm()">确认删除</button></div></div>`);
+}
+async function doDelConfirm(){
+  try{await api('/delete',{roomId,memberId:myId});stopPolling();roomId=null;myId=null;roomData=null;closeM();nav('home');renderHome();toast('已删除')}catch(e){toast('删除失败:'+e.message)}
+}
+
+// ═══ Init ═══
+(function(){
+  try{
+    renderHome();
+    let urlRoom = new URLSearchParams(location.search).get('room');
+    if(urlRoom){
+      // URL 带房间号：已有身份直接进，没有则弹窗输入昵称
+      pickNameThenJoin(urlRoom);
+      return;
+    }
+    if(M.roomId&&M.myId){
+      (async()=>{
+        try{
+          let d=await api('/room?id='+M.roomId);
+          if(d.room&&d.room.members.find(m=>m.id===M.myId)){
+            roomId=M.roomId;myId=M.myId;roomData=d.room;
+            renderRoom();nav('room');if(!roomData.closed)startPolling();
+          }
+        }catch{}
+      })();
+    }
+  }catch(e){
+    document.getElementById('app').innerHTML='<div style="padding:40px 20px;text-align:center;color:#c44a3f"><h2>加载失败</h2><p style="margin:12px 0">数据可能损坏，点击修复</p><button onclick="localStorage.clear();location.reload()" style="padding:12px 32px;border-radius:10px;background:#c44a3f;color:#fff;border:none;font-size:16px;cursor:pointer">清除数据并刷新</button></div>';
+  }
+})();
+</script>
+<button class="chat-float-btn" id="chat-btn" onclick="toggleChat()">💬<span class="badge" id="chat-badge"></span></button>
+
+  <div id="chat-float">
+    <div class="chat-header"><span>房间聊天</span><button onclick="toggleChat()">✕</button></div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-input-row"><input id="chat-input" placeholder="发消息..." maxlength="200" onkeydown="if(event.key===\'Enter\')sendChat()"><button onclick="sendChat()">发送</button></div>
+  </div>
+
+</body>
+</html>

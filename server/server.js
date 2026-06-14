@@ -16,6 +16,8 @@ function loadRoom(id) {
   if (!fs.existsSync(file)) return null;
   try {
     const room = JSON.parse(fs.readFileSync(file, 'utf-8'));
+    if (!room.members) room.members = [];
+    for (let m of room.members) { if (!m.role) m.role = 'player'; }
     const age = Date.now() - room.createdAt;
     if (age > DELETE_AGE) {
       try { fs.unlinkSync(file); } catch {}
@@ -187,7 +189,7 @@ const server = http.createServer(async (req, res) => {
         id,
         creatorId: memberId,
         icon: ROOM_ICONS[Math.floor(Math.random() * ROOM_ICONS.length)],
-        members: [{ id: memberId, name, score: 0, colorIdx: 0, avatarUrl: avatarUrl || '' }],
+        members: [{ id: memberId, name, score: 0, colorIdx: 0, avatarUrl: avatarUrl || '', role: 'player' }],
         transactions: [],
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -220,7 +222,7 @@ const server = http.createServer(async (req, res) => {
       const existing = room.members.find(m => m.name === name);
       if (existing) return json(res, { memberId: existing.id, room });
       const memberId = mid();
-      room.members.push({ id: memberId, name, score: 0, colorIdx: room.members.length, avatarUrl: avatarUrl || '' });
+      room.members.push({ id: memberId, name, score: 0, colorIdx: room.members.length, avatarUrl: avatarUrl || '', role: 'player' });
       room.updatedAt = Date.now();
       saveRoom(room);
       return json(res, { memberId, room });
@@ -325,6 +327,21 @@ const server = http.createServer(async (req, res) => {
       if (!member) return json(res, { error: 'member not found' }, 404);
       if (member.score !== 0) return json(res, { error: '仅可踢出积分为0的玩家' }, 403);
       room.members = room.members.filter(m => m.id !== memberId);
+      room.updatedAt = Date.now();
+      saveRoom(room);
+      return json(res, { room });
+    }
+
+    // POST /api/switch-role {roomId, memberId}
+    if (req.method === 'POST' && pathname === '/api/switch-role') {
+      const { roomId, memberId } = await parseBody(req);
+      if (!roomId || !memberId) return json(res, { error: 'missing fields' }, 400);
+      const room = loadRoom(roomId);
+      if (!room) return json(res, { error: 'room not found' }, 404);
+      if (room.closed) return json(res, { error: '房间已关闭' }, 403);
+      const member = room.members.find(m => m.id === memberId);
+      if (!member) return json(res, { error: 'member not found' }, 404);
+      member.role = member.role === 'spectator' ? 'player' : 'spectator';
       room.updatedAt = Date.now();
       saveRoom(room);
       return json(res, { room });

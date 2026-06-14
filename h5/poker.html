@@ -127,7 +127,7 @@ h2{font-size:1.2rem;font-weight:650}
 .recent-room:active{background:var(--surface2)}
 
 /* Room Top */
-.room-top{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.room-top{display:flex;align-items:center;gap:6px;margin-bottom:16px}
 .room-top-info{flex:1;min-width:0}
 .room-id-tag{
   display:inline-flex;align-items:center;gap:4px;background:var(--accent-bg);
@@ -173,12 +173,23 @@ h2{font-size:1.2rem;font-weight:650}
 #chat-float .chat-input-row button{border:none;background:var(--win);color:#fff;border-radius:4px;padding:4px 12px;font-size:.74rem;cursor:pointer;white-space:nowrap;flex-shrink:0}
 
 .scoreboard{margin-bottom:16px}
+/* Spectator */
+.spec-section{margin-bottom:16px}
+.spec-section-label{font-size:.72rem;color:var(--text3);margin-bottom:8px;font-weight:600}
+.spec-list{display:flex;gap:12px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+.spec-item{display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;border-radius:10px;transition:all .15s;flex-shrink:0}
+.spec-item:active{transform:scale(.93)}
+.spec-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;position:relative;overflow:hidden;border:2px solid var(--border2);background:var(--surface);flex-shrink:0}
+.spec-avatar-me{border-color:#4CAF50 !important;border-width:3px !important}
+.spec-avatar-img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;z-index:1}
+.spec-name{font-size:.68rem;color:var(--text2);max-width:56px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spec-empty{font-size:.72rem;color:var(--text3);text-align:center;padding:12px 0}
 .scoreboard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 
 .score-row{
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:8px;
   background:var(--surface);border-radius:var(--radius-sm);
-  padding:14px 16px;margin-bottom:6px;
+  padding:8px 12px;margin-bottom:3px;
   box-shadow:var(--shadow);cursor:pointer;transition:all .15s;
   animation:slideUp .25s ease-out both;
 }
@@ -199,19 +210,19 @@ h2{font-size:1.2rem;font-weight:650}
 .avatar-img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;z-index:1}
 .chat-avatar .avatar-img{border-radius:3px}
 .score-info{flex:1;min-width:0}
-.score-name{font-weight:600;font-size:.95rem}
-.score-me{font-size:.7rem;color:var(--win);font-weight:600}
-.score-value{font-family:var(--font-mono);font-size:1.15rem;font-weight:700;margin-left:auto}
+.score-name{font-weight:600;font-size:.85rem}
+.score-me{font-size:.65rem;color:var(--win);font-weight:600}
+.score-value{font-family:var(--font-mono);font-size:1rem;font-weight:700;margin-left:auto}
 .score-value.win{color:var(--win)}
 .score-value.lose{color:var(--lose)}
 .score-value.zero{color:var(--text3)}
 
-.transfer-hint{font-size:.68rem;color:var(--text3);margin-top:2px}
+.transfer-hint{font-size:.65rem;color:var(--text3)}
 
 /* Timeline */
-.timeline{margin-top:4px}
+.timeline{margin-top:2px}
 .timeline-item{
-  display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;gap:6px;padding:7px 0;border-bottom:1px solid var(--border2);
 }
 .timeline-item:last-child{border-bottom:none}
 .tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -221,10 +232,21 @@ h2{font-size:1.2rem;font-weight:650}
 .tl-meta{font-size:.72rem;color:var(--text3);margin-top:1px}
 .tl-amt{font-family:var(--font-mono);font-weight:650;font-size:.88rem}
 
-.tx-group{background:var(--accent-bg);border-radius:10px;padding:6px 12px;margin-bottom:12px}
-.tx-group-time{font-size:.68rem;color:var(--text3);text-align:center;margin-bottom:2px}
-.tx-group .timeline-item{border-bottom:none;padding:8px 0}
+.tx-row{display:flex;gap:6px;margin-bottom:6px;align-items:flex-start}
+.tx-group{background:var(--accent-bg);border-radius:10px;padding:4px 10px;flex:1;min-width:0}
+.tx-group-time{font-size:.68rem;color:var(--text3);text-align:center}
+.tx-group .timeline-item{border-bottom:none;padding:5px 0}
 .tx-group .timeline-item+.timeline-item{border-top:1px solid var(--border2)}
+.round-winner{flex-shrink:0;width:72px;background:var(--win);border-radius:8px;padding:6px 4px;text-align:center;font-size:.68rem;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.round-winner .rw-icon{font-size:1.2rem}
+.round-winner .rw-label{font-size:.55rem;opacity:.85}
+.round-winner .rw-name{font-weight:700;font-size:.72rem;word-break:break-all}
+.round-winner.no-winner{background:var(--text3)}
+.round-winner.rw-blue{background:#5b9cf5}
+.round-winner.rw-green{background:#3da86d}
+.round-winner.rw-orange{background:#f09830}
+.round-winner.rw-red{background:#e05a50}
+.round-winner.rw-bright{background:#d63031}
 
 .empty{text-align:center;padding:32px 20px;color:var(--text3)}
 .empty .e-icon{font-size:2.4rem;margin-bottom:8px;opacity:.5}
@@ -304,6 +326,28 @@ function groupTxs(txs){
     groups.push({time:first,items:g.reverse()});
   }
   return groups;
+}
+function winnerClass(d){return d<=5?'blue':d<=10?'green':d<=15?'orange':d<=25?'red':'bright'}
+function calcRoundWinner(room,txs){
+  let recv={},delta={},firstRecv={};
+  for(let tx of txs){
+    let to=tx.toMemberId,from=tx.fromMemberId;
+    recv[to]=(recv[to]||0)+1;
+    delta[from]=(delta[from]||0)-tx.amount;
+    delta[to]=(delta[to]||0)+tx.amount;
+    if(!firstRecv[to]||tx.timestamp<firstRecv[to])firstRecv[to]=tx.timestamp;
+  }
+  let candidates=Object.keys(recv).filter(id=>recv[id]>0);
+  if(candidates.length===0)return null;
+  candidates.sort((a,b)=>{
+    if(recv[b]!==recv[a])return recv[b]-recv[a];
+    let da=delta[a]||0,db=delta[b]||0;
+    if(db!==da)return db-da;
+    return (firstRecv[a]||0)-(firstRecv[b]||0);
+  });
+  let winnerId=candidates[0];
+  let member=room.members.find(m=>m.id===winnerId);
+  return member?{id:winnerId,name:member.name,recv:recv[winnerId],delta:delta[winnerId]||0}:null;
 }
 function randomName(id){
   let e=document.getElementById(id);
@@ -581,9 +625,10 @@ function renderRoom(){
   let room=roomData;if(!room){nav('home');return}
   let isClosed=room.closed;
   let me=room.members.find(m=>m.id===myId);
-  let sorted=[...room.members].sort((a,b)=>b.score-a.score);
+  let players=room.members.filter(m=>m.role!=='spectator');
+  let sorted=[...players].sort((a,b)=>b.score-a.score);
 
-  let board=room.members.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
+  let board=players.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
     :sorted.map((m,i)=>{
       let isMe=m.id===myId;
       return`<div class="score-row${isMe?' is-me':''}" style="position:relative" onclick="${isMe||isClosed?'':'showPay(\''+m.id+'\')'}">
@@ -600,10 +645,11 @@ function renderRoom(){
 
   let txs=[...room.transactions].reverse();
   let timeline=txs.length===0?`<div class="empty" style="padding:20px"><p style="font-size:.82rem">暂无记录</p></div>`
-    :`<div class="timeline">${groupTxs([...txs].reverse()).reverse().map(g=>`
-      <div class="tx-group">
-        <div class="tx-group-time">${tfmt(g.time)}</div>
-        ${g.items.map(tx=>{
+    :`<div class="timeline">${(()=>{let groups=groupTxs([...txs].reverse()).reverse();return groups.map(g=>{let w=calcRoundWinner(room,g.items);return`
+      <div class="tx-row">
+        <div class="tx-group">
+          <div class="tx-group-time">${tfmt(g.time)}</div>
+          ${g.items.map(tx=>{
           let f=room.members.find(m=>m.id===tx.fromMemberId),t=room.members.find(m=>m.id===tx.toMemberId);          return`<div class="timeline-item">
             <div class="tl-dot transfer-dot"></div>
             <div class="tl-body">
@@ -611,9 +657,11 @@ function renderRoom(){
             </div>
             <div class="tl-amt">${tx.amount}</div>
           </div>`;
-        }).join('')}
+          }).join('')}
+        </div>
+        ${w?`<div class="round-winner rw-${winnerClass(w.delta)}"><span class="rw-icon">🏆</span><span class="rw-name">${esc(w.name)}</span><span class="rw-label">+${w.delta}</span></div>`:`<div class="round-winner no-winner"><span class="rw-icon">—</span><span class="rw-label">无赢家</span></div>`}
       </div>
-    `).join('')}</div>`;
+    `;}).join('')})()}</div>`;
 
   document.getElementById('view-room')?.remove();
   document.getElementById('app').insertAdjacentHTML('beforeend',`
@@ -622,18 +670,19 @@ function renderRoom(){
         <button class="btn btn-ghost btn-icon" onclick="leaveRoom()">←</button>
         <div class="room-top-info">
           ${isClosed?'<div style="font-size:.68rem;color:var(--text3);margin-bottom:2px">结算时间：'+tfmt(room.settledAt||0)+'</div>':''}
-          <h2 style="margin:0"><span style="margin-right:4px">${room.icon||'🃏'}</span>${esc(room.id)}${isClosed?' <span style="font-size:.65rem;color:var(--lose)">已结算</span>':''}${me?.id===room.creatorId&&!isClosed?' <span style="font-size:.65rem;color:var(--text3)">我是房主</span>':!isClosed?' <span style="font-size:.65rem;color:var(--text3)">房主：'+esc(room.members.find(m=>m.id===room.creatorId)?.name||'?')+'</span>':''}</h2>
+          <h2 style="margin:0;font-size:1.05rem"><span style="margin-right:4px">${room.icon||'🃏'}</span>${esc(room.id)}${isClosed?' <span style="font-size:.65rem;color:var(--lose)">已结算</span>':''}${me?.id===room.creatorId&&!isClosed?' <span style="font-size:.65rem;color:var(--text3)">我是房主</span>':!isClosed?' <span style="font-size:.65rem;color:var(--text3)">房主：'+esc(room.members.find(m=>m.id===room.creatorId)?.name||'?')+'</span>':''}</h2>
           <div>
             <span id="dur" class="my-name-tag">${isClosed?'对局时长：'+fmtDuration(room.settleDuration||0):'对局时长：--'}</span>
           </div>
         </div>
-        <button class="btn btn-ghost btn-icon" onclick="doManualRefresh()" title="刷新">↻</button>
-        ${isClosed?'':`<button class="btn btn-ghost btn-sm" onclick="showMenu()">⋯</button>`}
+        <button class="btn btn-ghost btn-icon" onclick="doManualRefresh()" title="刷新" style="padding:5px;font-size:.85rem">↻</button>
+        ${isClosed?'':`<button class="btn btn-ghost btn-icon" onclick="showMenu()" style="padding:5px;font-size:.85rem">⋯</button>`}
       </div>
+      ${renderSpecList(room)}
       <div class="scoreboard">
         <div class="scoreboard-top">
           <h3>积分排行</h3>
-          <span style="font-size:.76rem;color:var(--text3)">${room.members.length}人</span>
+          <span style="font-size:.76rem;color:var(--text3)">${players.length}人</span>
         </div>
         ${board}
       </div>
@@ -706,6 +755,27 @@ async function kickMember(memberId,name){
   }catch(e){toast("踢出失败:"+e.message)}
 }
 
+async function switchRole(memberId){
+  try{
+    let d=await api('/switch-role',{roomId,memberId});
+    roomData=d.room;renderRoom();nav('room');if(!roomData.closed)startPolling();
+    toast('身份已切换');closeM();
+  }catch(e){toast('切换失败:'+e.message)}
+}
+
+function showSpecScore(memberId){
+  let m=roomData.members.find(x=>x.id===memberId);
+  if(m){toast(m.name+' 当前积分：'+(m.score||0))}
+}
+
+function renderSpecList(room){
+  let specs=room.members.filter(m=>m.role=='spectator');
+  if(specs.length===0) return '';
+  // 本人排第一
+  specs.sort((a,b)=>(a.id===myId?-1:b.id===myId?1:0));
+  return '<div class="spec-section"><div class="spec-section-label">👀 观众 ('+specs.length+'人)</div><div class="spec-list">'+specs.map(function(m){return '<div class="spec-item" onclick="showSpecScore(\''+m.id+'\')"><div class="spec-avatar'+(m.id===myId?' spec-avatar-me':'')+'" style="background:'+AC[m.colorIdx%8][0]+';color:'+AC[m.colorIdx%8][1]+'">'+(m.avatarUrl?'<img class="spec-avatar-img" src="'+esc(m.avatarUrl)+'" onerror="this.style.display=\'none\'">':'')+m.name[0]+'</div><div class="spec-name">'+esc(m.name)+'</div></div>';}).join('')+'</div></div>';
+}
+
 async function doManualRefresh(){
   try{let d=await api("/room?id="+roomId);if(!d.room)return;roomData=d.room}catch{return}
   refreshRoom();
@@ -717,8 +787,9 @@ function refreshRoom(){
   let tl=document.querySelector('#view-room .timeline');
   if(!sb||!tl)return;
 
-  let sorted=[...room.members].sort((a,b)=>b.score-a.score);
-  let board=room.members.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
+  let players=room.members.filter(m=>m.role!=='spectator');
+  let sorted=[...players].sort((a,b)=>b.score-a.score);
+  let board=players.length===0?`<div class="empty"><div class="e-icon">👥</div><p>等待牌友加入</p></div>`
     :sorted.map((m,i)=>{
       let isMe=m.id===myId;
       return`<div class="score-row${isMe?' is-me':''}" style="position:relative" onclick="${isMe?'':'showPay(\''+m.id+'\')'}">
@@ -734,16 +805,25 @@ function refreshRoom(){
     }).join('');
 
   sb.querySelectorAll('.score-row, .empty').forEach(el=>el.remove());
+  let specEl=document.querySelector('#view-room .spec-section');
+  if(specEl)specEl.remove();
+  let specs=room.members.filter(m=>m.role==='spectator');
+  if(specs.length>0){
+    specs.sort((a,b)=>(a.id===myId?-1:b.id===myId?1:0));
+    let specHtml=`<div class="spec-section"><div class="spec-section-label">👀 观众 (${specs.length}人)</div><div class="spec-list">${specs.map(m=>`<div class="spec-item" onclick="showSpecScore('${m.id}')"><div class="spec-avatar${m.id===myId?' spec-avatar-me':''}" style="background:${AC[m.colorIdx%8][0]};color:${AC[m.colorIdx%8][1]}">${m.avatarUrl?`<img class="spec-avatar-img" src="${esc(m.avatarUrl)}" onerror="this.style.display='none'">`:''}${m.name[0]}</div><div class="spec-name">${esc(m.name)}</div></div>`).join('')}</div></div>`;
+    sb.insertAdjacentHTML('beforebegin',specHtml);
+  }
   let head=sb.querySelector('.scoreboard-top');
-  if(head){head.textContent='';head.innerHTML=`<h3>积分排行</h3><span style="font-size:.76rem;color:var(--text3)">${room.members.length}人</span>`;}
+  if(head){head.textContent='';head.innerHTML=`<h3>积分排行</h3><span style="font-size:.76rem;color:var(--text3)">${players.length}人</span>`;}
   sb.insertAdjacentHTML('beforeend',board);
 
   let txs=[...room.transactions].reverse();
   tl.innerHTML=txs.length===0?`<div class="empty" style="padding:20px"><p style="font-size:.82rem">暂无记录</p></div>`
-    :groupTxs([...txs].reverse()).reverse().map(g=>`
-      <div class="tx-group">
-        <div class="tx-group-time">${tfmt(g.time)}</div>
-        ${g.items.map(tx=>{
+    :(()=>{let groups=groupTxs([...txs].reverse()).reverse();return groups.map(g=>{let w=calcRoundWinner(room,g.items);return`
+      <div class="tx-row">
+        <div class="tx-group">
+          <div class="tx-group-time">${tfmt(g.time)}</div>
+          ${g.items.map(tx=>{
           let f=room.members.find(m=>m.id===tx.fromMemberId),t=room.members.find(m=>m.id===tx.toMemberId);
           return`<div class="timeline-item">
             <div class="tl-dot transfer-dot"></div>
@@ -752,9 +832,11 @@ function refreshRoom(){
             </div>
             <div class="tl-amt">${tx.amount}</div>
           </div>`;
-        }).join('')}
+          }).join('')}
+        </div>
+        ${w?`<div class="round-winner rw-${winnerClass(w.delta)}"><span class="rw-icon">🏆</span><span class="rw-name">${esc(w.name)}</span><span class="rw-label">+${w.delta}</span></div>`:`<div class="round-winner no-winner"><span class="rw-icon">—</span><span class="rw-label">无赢家</span></div>`}
       </div>
-    `).join('');
+    `;}).join('')})()
 }
 
 function leaveRoom(){
@@ -812,6 +894,7 @@ function showMenu(){
     </div>
     <div class="modal-divider"></div>
     <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-secondary btn-block" onclick="switchRole(myId)">${(roomData.members.find(m=>m.id===myId)||{}).role==='spectator'?'成为玩家':'成为观众'}</button>
       <button class="btn btn-secondary btn-block" onclick="showChangeName()">修改昵称</button>
       ${isCreator?`<button class="btn btn-secondary btn-block" onclick="doReset()">重置积分</button>`:''}
       ${isCreator?`<button class="btn btn-secondary btn-block" onclick="doSettle()">积分结算</button>`:''}
